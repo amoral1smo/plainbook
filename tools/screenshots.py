@@ -11,8 +11,8 @@ own, builds one report, shoots every page the README shows with a headless
 Chromium at 1400 by 1000, and stops the server. Nothing of anybody's records
 is touched: the journal it shoots is the one tools/demo_journal.py writes.
 Needs a Chromium-family browser on the PATH (chromium, google-chrome, brave).
-Run it after a release, so that the version on the pictures is the one people
-download.
+Run it in the release commit, before the tag: the README on PyPI reads the
+pictures off the tag, and the version on them is the one people download.
 
     python3 tools/screenshots.py --edition=lite     # writes docs/lite/*.png
 

@@ -8,7 +8,7 @@ Windows, macOS and Linux, for forex, futures, stocks and crypto alike.
 
 [![tests](https://github.com/stop-loss-enjoyer/plainbook/actions/workflows/tests.yml/badge.svg)](https://github.com/stop-loss-enjoyer/plainbook/actions/workflows/tests.yml)
 [![release](https://img.shields.io/github/v/release/stop-loss-enjoyer/plainbook?label=release)](https://github.com/stop-loss-enjoyer/plainbook/releases/latest)
-[![license: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](LICENSE)
+[![license: PolyForm Shield](https://img.shields.io/badge/license-PolyForm%20Shield-blue.svg)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](#built-to-be-kept-by-an-agent)
 
@@ -19,8 +19,8 @@ https://github.com/user-attachments/assets/1741872f-fbd9-4e3f-bbc7-43267b224634
 <p align="center"><i>Every screenshot on this page is made on an invented journal.</i></p>
 
 The front page is the journal itself: the balance of every account, the
-positions in the market right now, the figures of the current week, and every
-trade grouped by week, month or quarter. A trade is written in two steps, the
+positions in the market right now, the figures of the current week, and the
+trades grouped by week, month or quarter, newest first. A trade is written in two steps, the
 idea before the market answers and the result after, and everything the
 journal shows is worked out from those records on every look: balances, R,
 winrates, the cost of every rule you broke.
@@ -539,13 +539,13 @@ Most software tolerates a coding agent. This one is arranged for it, and the
 arrangement is the same one that makes the journal private and durable: plain
 files, no dependencies, a small surface. There is no package manager, no
 lockfile and no build step, so an agent that can run `python3` can run the
-whole project. The tests, more than four hundred of them with no fixtures
-and no network, finish in under twenty seconds. [AGENTS.md](AGENTS.md) holds
+whole project. The tests, more than five hundred of them with no fixtures
+and no network, finish in about twenty seconds. [AGENTS.md](AGENTS.md) holds
 the map of the code, the invariants that must not be broken, recipes for the
 usual tasks, and the traps that have already bitten this project, each with the reason it
 exists. A guard, `tools/check_public.py`, refuses a push that would carry
 trade records or anything else it recognises as yours; it runs as a pre-push
-hook and in CI. The whole program is about 15 000 lines of Python, so it fits
+hook and in CI. The whole program is about 17 000 lines of Python, so it fits
 in a context window and an agent reasons about the real thing.
 
 `CLAUDE.md` points at the same guide, so Claude Code picks it up unprompted;
@@ -553,14 +553,15 @@ Codex, Cursor and the other agents read `AGENTS.md` on their own.
 
 ## FAQ
 
-**Is Plainbook free?** Yes. There is no plan, no trial and no account. The
-licence is PolyForm Noncommercial: run it, change it, pass it on, as long as
-nobody sells it.
+**Is Plainbook free?** Yes, for any purpose, your own trading on personal
+and prop firm accounts included. There is no plan, no trial and no account.
+The licence is PolyForm Shield: run it, change it, pass it on, as long as
+nobody sells it or builds a competing journal from it.
 
 **Is it open source?** The whole source is in this repository, to read,
-change and share. The licence is PolyForm Noncommercial rather than an OSI
-one, because it forbids selling the journal or building it into a product
-that is sold; if that is what open source means to you, this is not it.
+change and share. The licence is PolyForm Shield rather than an OSI one,
+because it forbids selling the journal or building a competing product from
+it; if that is what open source means to you, this is not it.
 
 **Is it a replacement for TradeZella, Edgewonk or TraderSync?** For keeping
 and reading a journal, yes: trades with screenshots, playbooks with their
@@ -628,13 +629,19 @@ permission.
 
 ## Licence
 
-PolyForm Noncommercial 1.0.0, from version 1.5.1 on. See [LICENSE](LICENSE).
-You can run the journal, change it for yourself and pass it on, for any
-purpose that is not commercial. Selling it, selling it under another name, or
-building it into a product that is sold is not allowed. Every version up to
-1.5.0 was released under MIT, and that is not withdrawn from them.
+PolyForm Shield 1.0.0, from version 1.9.1 on. See
+[LICENSE](LICENSE). You can run the journal, change it and pass it on, for
+any purpose: your own trading, a prop firm account, a class or a desk.
+Selling it, selling it under another name, or building a competing journal
+from it, paid or free, is not allowed.
 
-For a commercial licence, or to talk about the project itself, write to
+Earlier versions keep the licences they were released under. Versions 1.5.1
+to 1.9.0 are PolyForm Noncommercial 1.0.0, and for them the licensor also
+permits use for your own trading, including prop firm accounts. Every version
+up to 1.5.0 was released under MIT, and that is not withdrawn from them.
+
+For a design of your own, a version under your name, a commercial licence,
+or to talk about the project itself, write to
 [sl.enjoyer@pm.me](mailto:sl.enjoyer@pm.me).
 
 Required Notice: Copyright 2026 stop-loss-enjoyer

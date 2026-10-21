@@ -1201,7 +1201,6 @@ def equity_svg(series, width=980, height=260, cid="equity", sign="$",
     last_value = drawn[-1][2][-1][1]
     end_labels = [money(last_value), money(last_value - bases[-1][-1], signed=True)]
     pad_right = max(60, int(max(len(t) for t in end_labels) * 6.4) + 16)
-    pad = (56, 14, 26, pad_right)                 # left, top, bottom, right
     every = ([v for _, _, pts, _ in drawn for _, v, _ in pts]
              + [b for per_point in bases for b in per_point])
     y0, y1 = min(every), max(every)
@@ -1209,6 +1208,12 @@ def equity_svg(series, width=980, height=260, cid="equity", sign="$",
         y1 = y0 + 1
     gap = (y1 - y0) * 0.06
     y0, y1 = y0 - gap, y1 + gap
+    # and the labels of the grid how much the left keeps: an account of nine
+    # digits lost its first ones off the edge
+    step = nice_step(y1 - y0)
+    grid = [money(n * step) for n in range(math.ceil(y0 / step), math.floor(y1 / step) + 1)]
+    pad_left = max(56, math.ceil(max((len(t) for t in grid), default=0) * 5.6) + 6)
+    pad = (pad_left, 14, 26, pad_right)           # left, top, bottom, right
     all_x = [x for _, _, _, xs in drawn for x in xs]
     x0, x1 = min(all_x), max(all_x)
     pw, ph = width - pad[0] - pad[3], height - pad[1] - pad[2]
@@ -1343,18 +1348,25 @@ def equity_svg(series, width=980, height=260, cid="equity", sign="$",
             placed.append((at[0] if at else X(moment), at if dot and dot[0] else None,
                            word, colour))
         placed.sort(key=lambda m: m[0])
+        before = None
         for i, (x, at, word, colour) in enumerate(placed):
             anchor = "start" if x < left + 30 else "end" if x > right - 30 else "middle"
-            # two marks close together say their words away from each other
+            x_text, y_text = x, top + 10
+            # two marks close together say their words away from each other;
+            # at an edge there is one side only, so the second word goes
+            # under the first instead of over the axis or the end of the line
             if i + 1 < len(placed) and placed[i + 1][0] - x < 44:
-                anchor, x_text = "end", x - 3
+                anchor = "start" if x < left + 30 else "end"
             elif i > 0 and x - placed[i - 1][0] < 44:
-                anchor, x_text = "start", x + 3
-            else:
-                x_text = x
+                anchor = "end" if x > right - 30 else "start"
+                if anchor == before:
+                    y_text += 12
+            if anchor != "middle":
+                x_text = x + 3 if anchor == "start" else x - 3
+            before = anchor
             parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{bottom}" '
                          f'stroke="{colour}" stroke-opacity=".55" stroke-dasharray="3 3"/>'
-                         f'<text x="{x_text:.1f}" y="{top + 10}" fill="{colour}" font-size="10" '
+                         f'<text x="{x_text:.1f}" y="{y_text}" fill="{colour}" font-size="10" '
                          f'text-anchor="{anchor}">{esc(word)}</text>')
             if at:
                 parts.append(f'<circle cx="{at[0]:.1f}" cy="{at[1]:.1f}" r="5" '
@@ -1585,7 +1597,10 @@ def r_line_svg(dots, loss_tops, win_tops, width=560):
         columns[key] = columns.get(key, 0) + 1
     tallest = max(columns.values())
     size = max(3.0, min(6.5, 150 / tallest - 1.2))
-    lift = size + 1.2
+    # past the smallest dot the dots of a column overlap instead: a journal
+    # of some years stacked six hundred losses at -1 R into a card twice the
+    # height of the bars beside it
+    lift = min(size + 1.2, 150 / tallest)
     base = 30 + tallest * lift
     height = base + 22
     out = [f'<svg class="rline" viewBox="0 0 {width} {height:.0f}" width="100%" '

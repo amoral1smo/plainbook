@@ -2,7 +2,7 @@
 
 This project is meant to be kept by a coding agent. Not tolerated by one, but
 built for it: no dependencies to resolve, no build step to wait for, a test
-suite that finishes in under twenty seconds, and every rule that matters written
+suite that finishes in about twenty seconds, and every rule that matters written
 down here instead of living in someone's head.
 
 Read this before you touch anything. It is short on purpose.
@@ -42,7 +42,7 @@ records.
 ## 2. Running it
 
 ```bash
-python3 -m unittest discover -s tests    # the whole suite, under twenty seconds
+python3 -m unittest discover -s tests    # the whole suite, about twenty seconds
 python3 tools/check_public.py            # nothing private in the tree
 python3 tools/check_journal.py [root]    # does every record read
 python3 -m plainbook.server              # http://localhost:8778
@@ -95,7 +95,7 @@ PLAINBOOK_ROOT=/tmp/pb-test PLAINBOOK_PORT=8899 python3 -m plainbook.server
 | `tools/app_entry.py` | the entry of the downloaded file: what PyInstaller packs |
 | `tools/pypi_readme.py` | the README with its links made absolute on a tag, for the page of the package on pypi.org; the publish workflow runs it on its own checkout |
 | `tools/browser_check.mjs` | the scripted forms driven in a headless Chromium against a demo journal |
-| `tools/screenshots.py` | retakes the pictures of README.md in `docs/` on the demo journal; run it after a release; `--edition=lite` takes the Plainbook Lite ones into `docs/lite/` |
+| `tools/screenshots.py` | retakes the pictures of README.md in `docs/` on the demo journal; run it in the release commit, before the tag; `--edition=lite` takes the Plainbook Lite ones into `docs/lite/` |
 | `tests/` | the suite: `test_server.py` walks the routes on one shared journal, the others take the modules one by one; `formpost.py` reads a form of a page the way a browser sends it |
 | `docs/` | the screenshots of README.md, taken on the demo journal |
 | `desktop/` | the autostart of each system (the user unit for Linux, the LaunchAgent for macOS, the script that makes the startup shortcut on Windows), the window toggle and the bar widget for Omarchy; see its README |

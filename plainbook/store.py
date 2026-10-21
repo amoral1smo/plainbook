@@ -26,6 +26,7 @@ under "Exit", is kept as it is too.
 import math
 from decimal import Decimal
 import os
+import pickle
 import re
 import shutil
 import threading
@@ -885,7 +886,30 @@ def _read(path):
 BROKEN = (ValueError, TypeError, KeyError, AttributeError, OSError)
 
 
-def _load(problems, path, convert, root=None, ident=None, report=False):
+# Every trade as it was last parsed: path -> (stamp, convert, pickled record).
+# The server reads the whole journal again after every save, and a few
+# thousand trades parsed from scratch took most of a second each time; a file
+# whose stamp has not moved is taken from here. The record comes back
+# unpickled, a copy of its own, because a page may change the trades of the
+# journal it holds, and that must not reach the next read.
+_parsed = {}
+
+
+def _parse(path, convert):
+    st = os.stat(path)
+    # a save replaces the file, so the inode moves even when the clock and
+    # the size do not
+    stamp = (st.st_mtime_ns, st.st_size, st.st_ino)
+    hit = _parsed.get(path)
+    if hit is not None and hit[0] == stamp and hit[1] is convert:
+        return pickle.loads(hit[2])
+    record = convert(_read(path))
+    _parsed[path] = (stamp, convert, pickle.dumps(record, pickle.HIGHEST_PROTOCOL))
+    return record
+
+
+def _load(problems, path, convert, root=None, ident=None, report=False,
+          cached=False):
     """Reads one record. `ident` is the folder name (the file stem for an
     account or an adjustment): the folder is the truth for the id, because
     the code addresses a record by its folder. A folder copied or renamed by
@@ -893,7 +917,7 @@ def _load(problems, path, convert, root=None, ident=None, report=False):
     shadow each other. With `report` the mismatch is also written to the
     list; the file itself is never rewritten at load."""
     try:
-        record = convert(_read(path))
+        record = _parse(path, convert) if cached else convert(_read(path))
         header_id = record.id
         if ident is not None and header_id != ident:
             record.id = ident
@@ -986,13 +1010,19 @@ def save_adjustment(root, c):
 def all_trades(root, problems=None):
     """Every trade, sorted by entry date (then by id)."""
     base = os.path.join(root, JOURNAL, TRADES)
-    trades = []
+    trades, seen = [], set()
     for name in sorted(os.listdir(base)) if os.path.isdir(base) else []:
         path = os.path.join(base, name, TRADE_FILE)
         if os.path.isfile(path):
-            t = _load(problems, path, text_to_trade, root, name, True)
+            seen.add(path)
+            t = _load(problems, path, text_to_trade, root, name, True, cached=True)
             if t is not None:
                 trades.append(t)
+    # a trade moved to the trash or renamed leaves its old entry behind; the
+    # keys are copied first, since another request may be reading the journal
+    inside = os.path.join(base, "")
+    for path in [p for p in list(_parsed) if p.startswith(inside) and p not in seen]:
+        _parsed.pop(path, None)
     trades.sort(key=lambda t: (t.opened or datetime.max, t.id))
     return trades
 

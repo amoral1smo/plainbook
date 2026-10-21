@@ -163,6 +163,29 @@ class FormsCase(unittest.TestCase):
                 self.post(f"/edit/{trade_id}", fields)
                 self.assertEqual(self.tree(trade_id), before)
 
+    def test_an_edit_keeps_the_order_of_the_execution_formats(self):
+        trade_id = "2026-08-29-09-eurusd"
+        self.trade(trade_id, execution=["SNR", "Market Entry"])
+        before = self.tree(trade_id)
+        fields = self.form(f"/edit/{trade_id}")
+        self.post(f"/edit/{trade_id}", fields)
+        self.assertEqual(self.tree(trade_id), before)
+        self.post(f"/edit/{trade_id}", dict(fields, execution=["Market Entry", "FVG"]))
+        self.assertEqual(self.load(trade_id).execution, ["Market Entry", "FVG"])
+
+    # --- the page of the trade ---
+    def test_an_exit_without_its_hour_is_not_drawn_before_the_entry(self):
+        trade_id = "2026-08-30-01-eurusd"
+        self.trade(trade_id, opened=datetime(2026, 8, 30, 17, 30),
+                   closed=datetime(2026, 8, 30), closed_time=False, breakeven=None)
+        page = self.get(f"/trade/{trade_id}")
+        chart = page[page.index('id="trade-equity"'):]
+        x = {w: float(v) for v, w in re.findall(
+            r'<line x1="([^"]+)"[^>]*/><text [^>]*>(entry|exit)</text>', chart)}
+        # the entry used to fall after the last point of the line, off it
+        self.assertIn("entry", x)
+        self.assertLessEqual(x["entry"], x["exit"])
+
     # --- a key absent leaves the value, a key blank clears it ---
     def test_the_plan_is_kept_when_not_sent_and_cleared_when_blank(self):
         trade_id = "2026-08-29-03-eurusd"

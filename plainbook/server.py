@@ -303,7 +303,7 @@ def apply_filters(j, q):
 
 
 # what the front page is drawn by: the filters, the months and the grouping
-SELECTION_FIELDS = [name for name, _, _ in FILTER_FIELDS] + ["from", "to", "group"]
+SELECTION_FIELDS = [name for name, _, _ in FILTER_FIELDS] + ["from", "to", "group", "all"]
 
 
 def selection(q):
@@ -553,6 +553,42 @@ def trades_table(j, trades, group="week", keep="", filtered=False):
                '<td class="num muted">-</td><td class="num muted">-</td></tr>'))
         rows += [trade_row(j, t, keep) for t in batch]
     return "".join(rows) + "</tbody></table>"
+
+
+# The rows the front page draws before it asks. A browser takes seconds over
+# a table of a few thousand rows, each a row of links with two flags in it,
+# and the list is read from the top: a journal this short draws every row.
+FRONT_ROWS = 300
+
+
+def newest_groups(trades, group, limit=None):
+    """The trades of the newest weeks (months, quarters) that fit in `limit`
+    rows, `FRONT_ROWS` unless said, whole groups only, so that the total of
+    every group drawn is the total of the group. The newest group is drawn
+    whatever its size."""
+    limit = FRONT_ROWS if limit is None else limit
+    if len(trades) <= limit:
+        return trades
+    buckets = {}
+    for t in trades:
+        buckets.setdefault(group_key(t.opened, group), []).append(t)
+    shown = []
+    for key in sorted(buckets, reverse=True):
+        if shown and len(shown) + len(buckets[key]) > limit:
+            break
+        shown += buckets[key]
+    return shown
+
+
+def older_trades(q, shown, total):
+    """The line under a list cut by `newest_groups`, and the way to the rest."""
+    if shown >= total:
+        return ""
+    params = {k: v[:] for k, v in q.items()}
+    params["all"] = ["1"]
+    href = "/?" + urllib.parse.urlencode(params, doseq=True)
+    return (f'<p class="caption">The newest {shown} of {total} trades. '
+            f'<a href="{esc(href)}">Show all {total}</a></p>')
 
 
 def period_tile(j, trades, group):
@@ -851,20 +887,22 @@ def home_page(q):
                   f'title="the weekly report card: the week reviewed">+ WRC</a>')
     # the same selection as a file: a spreadsheet gets the filtered list
     export = "/export.csv" + ("?" + urllib.parse.urlencode(
-        {k: v for k, v in q.items() if k != "group"}, doseq=True)
-        if any(k != "group" for k in q) else "")
+        {k: v for k, v in q.items() if k not in ("group", "all")}, doseq=True)
+        if any(k not in ("group", "all") for k in q) else "")
+    shown = trades if (q.get("all") or [""])[0] else newest_groups(trades, group)
     head = (f'<div class="card-head"><h2>Trades</h2>'
             f'<span class="right">{filters_box(j, q)}'
             f'{group_switch(q, group)}'
             f'<a class="btn" href="{esc(export)}" title="the selection as CSV">'
             f'CSV</a>'
-            f'<a class="btn" href="{esc(share_href("/share/journal", q, group=None))}" '
+            f'<a class="btn" href="{esc(share_href("/share/journal", q, group=None, all=None))}" '
             f'title="the selection as one file, to show another trader">'
             f'Share</a></span></div>')
     body = (account_tiles(j) + open_positions(j) + tiles +
             '<div class="card">' + head +
-            trades_table(j, trades, group, selection(q),
-                         filtered=bool(active_filters(q))) + "</div>")
+            trades_table(j, shown, group, selection(q),
+                         filtered=bool(active_filters(q)))
+            + older_trades(q, len(shown), len(trades)) + "</div>")
     return page("Journal", body, "journal", right)
 
 
@@ -1238,7 +1276,11 @@ def passport(j, t, now=None):
     points = stats.equity_events(j, t.account)
     if len(points) >= 2:
         account = j.accounts.get(t.account)
-        marks = [(t.opened, "entry", H.INK2)]
+        # an exit written without its hour stands at the start of its day,
+        # and an entry later that day would be drawn after the exit
+        entry = (min(t.opened, t.closed) if not t.is_open and t.closed
+                 and not t.closed_time else t.opened)
+        marks = [(entry, "entry", H.INK2)]
         if not t.is_open and t.closed:
             marks.append((t.closed, "exit", colour, True))
         chart = H.equity_svg(
@@ -3741,7 +3783,11 @@ def apply_fields(t, data, editing=False, j=None):
     t.direction = one(data, "direction")
     t.style = one(data, "style")
     t.entry_tf = one(data, "entry_tf")
-    t.execution = data.get("execution", [])
+    # the boxes come back in the order of the list, not the trade's: the
+    # formats it had keep their places, so an edit does not reorder them
+    ticked = data.get("execution", [])
+    t.execution = ([w for w in t.execution if w in ticked] +
+                   [w for w in ticked if w not in t.execution])
     if "plan" in data:
         t.plan = one(data, "plan")
     # a form that does not draw the note leaves it (invariant 14); a header
@@ -6954,6 +7000,11 @@ def reports_page():
         return shown
 
     years = sorted({q[:4] for q in quarters}, reverse=True)
+    # the months of each quarter, found once: asked of every month for every
+    # quarter, it was most of the page on a journal of some years
+    months_of = {}
+    for m in months:
+        months_of.setdefault(stats.quarter(reports.parse_period(m)[0]), []).append(m)
     rows = ""
     for year in years:
         if len(years) > 1:
@@ -6968,8 +7019,7 @@ def reports_page():
             rows += (f'<tr class="quarter"><td>{name_cell(q)}'
                      f'<span class="muted" style="margin-left:8px">{span}</span></td>'
                      f'{shelf_cells(j, composed[q])}{cell}</tr>')
-            for m in sorted((m for m in months if stats.quarter(reports.parse_period(m)[0]) == q),
-                            reverse=True):
+            for m in sorted(months_of.get(q, ()), reverse=True):
                 cell = (report_cell(m, ready, m == due)
                         if composed[m].trades or m in ready else "<td></td>")
                 rows += (f'<tr class="sub"><td>{name_cell(m)}</td>'

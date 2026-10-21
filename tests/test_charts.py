@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """The pictures: what the smoothing is allowed to do, and how R is split."""
 import os
+import re
 import sys
 import unittest
 from datetime import datetime, timedelta
@@ -121,6 +122,51 @@ class EquityTipCase(unittest.TestCase):
         pts = [(datetime(2026, 7, 1), 100.0), (datetime(2026, 7, 2), 110.0)]
         svg = equity_svg([("acc", "#fff", pts)], sign="€")
         self.assertIn('"sign": "€"', unescape(svg))
+
+
+class EquityMarksCase(unittest.TestCase):
+    def test_two_marks_at_the_right_edge_keep_their_words_inside(self):
+        """The entry and the exit of the newest trade sit at the end of the
+        line, where its balance is printed: both words go to the left of the
+        marks, one under the other, and not over the balance."""
+        day = datetime(2026, 10, 1)
+        pts = [(day + timedelta(days=i), 1000.0 + i * 10, None) for i in range(10)]
+        last = pts[-1][0]
+        svg = H.equity_svg([("acc", "#fff", pts)], width=560, height=220,
+                           marks=[(last, "entry", "#aaa"), (last, "exit", "#f00", True)])
+        words = {w: (a, float(y)) for y, a, w in re.findall(
+            r'<text x="[^"]+" y="([^"]+)" fill="[^"]+" font-size="10" '
+            r'text-anchor="(\w+)">(entry|exit)</text>', svg)}
+        self.assertEqual(words["entry"][0], "end")
+        self.assertEqual(words["exit"][0], "end")
+        self.assertNotEqual(words["entry"][1], words["exit"][1])
+
+
+class LongJournalChartsCase(unittest.TestCase):
+    def test_a_balance_of_nine_digits_keeps_its_first_ones(self):
+        """The labels of the grid end six pixels left of the plot and run
+        leftwards: the plot starts far enough in for the widest of them."""
+        day = datetime(2026, 1, 1)
+        pts = [(day + timedelta(days=i), 1e8 + i * 1e8, None) for i in range(10)]
+        svg = H.equity_svg([("acc", "#fff", pts)], width=560, height=220)
+        x, label = max(((float(x), w) for x, w in re.findall(
+            r'<text x="([^"]+)" y="[^"]+" fill="[^"]+" font-size="10" '
+            r'text-anchor="end">([^<]+)</text>', svg) if w[0].isdigit()),
+            key=lambda xw: len(xw[1]))
+        self.assertGreaterEqual(x, len(label) * 5.6)
+
+    def test_an_account_of_ordinary_size_draws_as_it_did(self):
+        day = datetime(2026, 1, 1)
+        pts = [(day + timedelta(days=i), 10000.0 + i * 100, None) for i in range(10)]
+        svg = H.equity_svg([("acc", "#fff", pts)], width=560, height=220)
+        self.assertIn('<text x="50" ', svg)
+
+    def test_six_hundred_losses_at_one_r_do_not_stretch_the_card(self):
+        dots = [(-1.0, "Lose", 0, "/trade/x", "x")] * 600 + [(2.0, "Win", 0, "/trade/y", "y")]
+        svg = H.r_line_svg(dots, [None], [None])
+        height = float(re.search(r'viewBox="0 0 \d+ ([\d.]+)"', svg).group(1))
+        self.assertLess(height, 210)
+        self.assertEqual(svg.count("<circle"), 601)
 
 
 class EquityAxesCase(unittest.TestCase):

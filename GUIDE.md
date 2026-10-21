@@ -611,7 +611,11 @@ written on the card, the daily one a hyphen.
   holds the number of trades, WR with its EV, Σ PnL and Σ R. **A click anywhere on a row
   opens that trade**: its fields, the idea you wrote before the entry with its
   screenshots, the exit moment and the conclusions. The same goes for a row in
-  the open positions block.
+  the open positions block. When the list holds more than 300 trades,
+  it draws the newest periods, each whole, up to 300 rows (the newest period
+  always, whatever its size), and says under the list how many it shows;
+  **Show all** draws every one. The tiles and CSV
+  always count the whole selection.
 - **Filters** sit behind the funnel button to the left of the switch: account,
   pair, style, direction, result, a range of months. They apply both to the
   list and to the summary tiles, the range of months to every tile but the

@@ -2,6 +2,40 @@
 
 What changed and why. Newest first.
 
+## v1.9.1, 21.10.2026
+
+A new licence that says plainly what the old one left open: the journal is
+free for your own trading, prop firm accounts included. A journal of a few
+thousand trades opens and saves fast, and the pictures of a long one keep
+their shape.
+
+- **The licence is PolyForm Shield 1.0.0 from this version on.** The journal
+  is free for any purpose, your own trading on personal and prop firm
+  accounts included, which the noncommercial licence did not say plainly.
+  Selling it, selling it under another name, or building a competing journal
+  from it stays forbidden. Versions 1.5.1 to 1.9.0 keep PolyForm
+  Noncommercial, and use for your own trading, including prop firm accounts,
+  is permitted for them too. Versions up to 1.5.0 stay MIT.
+- Editing a trade keeps its execution formats in the order the trade had
+  them, and a format ticked anew goes after them; a save used to put them
+  all back in the order of your list.
+- A journal of a few thousand trades opens fast. When the list on the front
+  page holds more than 300 trades, it draws the newest periods, each whole, up
+  to 300 rows (the newest period always), and **Show all** under the list
+  draws the rest; a shorter list looks as it did. A
+  save no longer reads every trade off the disk again, only the ones that
+  changed, and the Reports tab no longer slows down faster than the journal
+  grows.
+- The R distribution on Statistics keeps its height on a journal of
+  thousands of trades: a crowded column packs its dots closer instead of
+  growing the card, and every trade still has its dot.
+- The curve of an account of nine digits or more keeps the first digits of
+  its balance labels; they used to run off the left edge.
+- On the page of a trade, the curve of the account no longer draws the entry
+  after the exit when the exit was written without its hour, and the words
+  of an entry and an exit at the end of the line no longer cover the balance
+  printed there.
+
 ## v1.9.0, 10.10.2026
 
 The journal comes in two editions now. Plainbook Lite keeps the trades, the
